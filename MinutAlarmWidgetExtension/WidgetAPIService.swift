@@ -66,42 +66,43 @@ class WidgetAPIService {
     }
     
     // MARK: - API Calls
-    
-    func getAlarmStatus(homeId: String, accessToken: String) async throws -> Bool {
-        let url = URL(string: "\(baseURL)/homes/\(homeId)/alarm")!
+
+    func getAlarmStatus(homeId: String, accessToken: String) async throws -> AlarmInfo {
+        let url = URL(string: "\(baseURL)/homes/\(homeId)")!
         var request = URLRequest(url: url)
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse,
               200..<300 ~= httpResponse.statusCode else {
             throw MinutAPIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
-        
-        print(data)
-    
-        let alarmResponse = try JSONDecoder().decode(MinutAlarmResponse.self, from: data)
-        //return alarmResponse.alarm.enabled
-        return true // fixme
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let homeResponse = try decoder.decode(MinutHomeResponse.self, from: data)
+        return homeResponse.alarm
     }
-    
+
     func setAlarmStatus(homeId: String, enabled: Bool, accessToken: String) async throws {
         let url = URL(string: "\(baseURL)/homes/\(homeId)/alarm")!
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body = [
-            "alarm_status": enabled ? "on" : "off"
-        ]
 
+        let body = MinutAlarmUpdateRequest(
+            alarmStatus: enabled ? .on : .off,
+            alarmMode: .manual,
+            silentAlarm: false,
+            scheduledAlarmActive: false
+        )
         request.httpBody = try JSONEncoder().encode(body)
-        
+
         let (_, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse,
               200..<300 ~= httpResponse.statusCode else {
             throw MinutAPIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)

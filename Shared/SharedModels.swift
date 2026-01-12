@@ -112,12 +112,84 @@ struct MinutHome: Identifiable, Codable {
     let id: String
     let name: String
     let timezone: String?
-    
+    let alarm: AlarmInfo?
+
     enum CodingKeys: String, CodingKey {
         case id = "home_id"
         case name
         case timezone
+        case alarm
     }
+}
+
+// MARK: - Alarm Info
+
+struct AlarmInfo: Codable {
+    let events: [AlarmEvent]?
+    let gracePeriodExpiresAt: Date?
+    let gracePeriodSecs: Int?
+    let escalationStatus: EscalationStatus?
+    let escalatedBy: String?
+    let escalationCancelledBy: String?
+    let escalationPeriodExpiresAt: Date?
+    let escalationPeriodSeconds: Int?
+    let earliestAlarmTime: Date?
+    let alarmStatus: AlarmStatus
+    let alarmMode: AlarmMode?
+    let silentAlarm: Bool?
+    let scheduledAlarmActive: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case events
+        case gracePeriodExpiresAt = "grace_period_expires_at"
+        case gracePeriodSecs = "grace_period_secs"
+        case escalationStatus = "escalation_status"
+        case escalatedBy = "escalated_by"
+        case escalationCancelledBy = "escalation_cancelled_by"
+        case escalationPeriodExpiresAt = "escalation_period_expires_at"
+        case escalationPeriodSeconds = "escalation_period_seconds"
+        case earliestAlarmTime = "earliest_alarm_time"
+        case alarmStatus = "alarm_status"
+        case alarmMode = "alarm_mode"
+        case silentAlarm = "silent_alarm"
+        case scheduledAlarmActive = "scheduled_alarm_active"
+    }
+
+    var isArmed: Bool {
+        alarmStatus == .on || alarmStatus == .onGracePeriod
+    }
+}
+
+struct AlarmEvent: Codable {
+    let eventType: String
+    let deviceId: String
+    let occurredAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case eventType = "event_type"
+        case deviceId = "device_id"
+        case occurredAt = "occurred_at"
+    }
+}
+
+enum AlarmStatus: String, Codable {
+    case on
+    case off
+    case offGracePeriod = "off_grace_period"
+    case onGracePeriod = "on_grace_period"
+    case criticalEvent = "critical_event"
+}
+
+enum AlarmMode: String, Codable {
+    case manual
+}
+
+enum EscalationStatus: String, Codable {
+    case none
+    case countdown
+    case escalatedAutomatically = "escalated_automatically"
+    case escalatedManually = "escalated_manually"
+    case escalationCancelled = "escalation_cancelled"
 }
 
 // MARK: - API Response Models
@@ -126,33 +198,30 @@ struct MinutHomesResponse: Codable {
     let homes: [MinutHome]
 }
 
-struct MinutAlarmResponse: Codable {
-    let alarm: AlarmState
-    
-    struct AlarmState: Codable {
-        let enabled: Bool
-        let mode: String?
+struct MinutHomeResponse: Codable {
+    let homeId: String
+    let name: String
+    let timezone: String?
+    let alarm: AlarmInfo
+
+    enum CodingKeys: String, CodingKey {
+        case homeId = "home_id"
+        case name
+        case timezone
+        case alarm
     }
 }
 
 struct MinutAlarmUpdateRequest: Codable {
-    let alarm: AlarmUpdate
-    
-    struct AlarmUpdate: Codable {
-        let enabled: Bool
-    }
-}
+    let alarmStatus: AlarmStatus
+    let alarmMode: AlarmMode
+    let silentAlarm: Bool
+    let scheduledAlarmActive: Bool
 
-// MARK: - Alarm Status (for local use)
-
-struct AlarmStatus {
-    let isArmed: Bool
-    let mode: String?
-    let lastUpdated: Date
-    
-    init(isArmed: Bool, mode: String? = nil) {
-        self.isArmed = isArmed
-        self.mode = mode
-        self.lastUpdated = Date()
+    enum CodingKeys: String, CodingKey {
+        case alarmStatus = "alarm_status"
+        case alarmMode = "alarm_mode"
+        case silentAlarm = "silent_alarm"
+        case scheduledAlarmActive = "scheduled_alarm_active"
     }
 }

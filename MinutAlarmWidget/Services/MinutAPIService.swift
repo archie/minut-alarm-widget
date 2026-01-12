@@ -29,23 +29,28 @@ class MinutAPIService {
     }
     
     // MARK: - Alarm
-    
-    func getAlarmStatus(homeId: String, accessToken: String) async throws -> Bool {
-        let url = URL(string: "\(baseURL)/homes/\(homeId)/alarm")!
+
+    func getAlarmStatus(homeId: String, accessToken: String) async throws -> AlarmInfo {
+        let url = URL(string: "\(baseURL)/homes/\(homeId)")!
         let data = try await performRequest(url: url, method: "GET", accessToken: accessToken)
-        
-        let response = try JSONDecoder().decode(MinutAlarmResponse.self, from: data)
-        return response.alarm.enabled
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let response = try decoder.decode(MinutHomeResponse.self, from: data)
+        return response.alarm
     }
-    
+
     func setAlarmStatus(homeId: String, enabled: Bool, accessToken: String) async throws {
         let url = URL(string: "\(baseURL)/homes/\(homeId)/alarm")!
-        
+
         let requestBody = MinutAlarmUpdateRequest(
-            alarm: MinutAlarmUpdateRequest.AlarmUpdate(enabled: enabled)
+            alarmStatus: enabled ? .on : .off,
+            alarmMode: .manual,
+            silentAlarm: false,
+            scheduledAlarmActive: false
         )
         let bodyData = try JSONEncoder().encode(requestBody)
-        
+
         _ = try await performRequest(
             url: url,
             method: "PATCH",

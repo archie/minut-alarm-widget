@@ -102,14 +102,34 @@ The widget uses `AppIntents` framework for direct button interactions:
 
 ### API Endpoints Used
 - `GET /homes` - List user's homes (main app only)
-- `GET /homes/{id}/alarm` - Get alarm status (returns `{alarm: {enabled: bool, mode?: string}}`)
-- `PATCH /homes/{id}/alarm` - Set alarm status (send `{alarm: {enabled: bool}}`)
+- `GET /homes/{id}` - Get home details including alarm status
+- `PATCH /homes/{id}/alarm` - Set alarm status
 - `POST /oauth/token` - Token exchange and refresh
+
+### Alarm Status Structure
+The `GET /homes/{id}` endpoint returns alarm info with:
+- `alarm_status`: enum (on|off|off_grace_period|on_grace_period|critical_event)
+- `alarm_mode`: enum (manual)
+- `silent_alarm`: boolean
+- `scheduled_alarm_active`: boolean
+- `escalation_status`: enum (none|countdown|escalated_automatically|escalated_manually|escalation_cancelled)
+- Grace period and escalation timing fields
+
+To toggle alarm via `PATCH /homes/{id}/alarm`:
+```json
+{
+  "alarm_status": "on",  // or "off"
+  "alarm_mode": "manual",
+  "silent_alarm": false,
+  "scheduled_alarm_active": false
+}
+```
 
 ### Request Format
 All API requests require:
 - Header: `Authorization: Bearer {access_token}`
 - Header: `Accept: application/json` or `Content-Type: application/json`
+- Dates use ISO 8601 format (configure JSONDecoder with `.iso8601` strategy)
 
 ## Common Development Pitfalls
 

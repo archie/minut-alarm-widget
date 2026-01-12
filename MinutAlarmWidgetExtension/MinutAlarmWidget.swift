@@ -75,25 +75,25 @@ struct AlarmWidgetProvider: TimelineProvider {
                 state: .noHomeSelected
             )
         }
-        
+
         do {
             let token = try await WidgetAPIService.shared.getValidAccessToken()
-            let isArmed = try await WidgetAPIService.shared.getAlarmStatus(
+            let alarmInfo = try await WidgetAPIService.shared.getAlarmStatus(
                 homeId: homeId,
                 accessToken: token
             )
-            
+
             // Cache the state
-            SharedSettings.lastKnownAlarmState = isArmed
+            SharedSettings.lastKnownAlarmState = alarmInfo.isArmed
             SharedSettings.lastUpdateTime = Date()
-            
+
             return AlarmEntry(
                 date: Date(),
-                isArmed: isArmed,
+                isArmed: alarmInfo.isArmed,
                 homeId: homeId,
                 state: .ready
             )
-            
+
         } catch {
             if case MinutAuthError.missingCredentials = error {
                 return AlarmEntry(
@@ -103,7 +103,7 @@ struct AlarmWidgetProvider: TimelineProvider {
                     state: .notAuthenticated
                 )
             }
-            
+
             // Return cached state on error
             return AlarmEntry(
                 date: Date(),
