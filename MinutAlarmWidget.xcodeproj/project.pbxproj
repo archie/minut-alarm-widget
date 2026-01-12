@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2199A2862F15491700699F37 /* MinutColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2199A2852F15491700699F37 /* MinutColors.swift */; };
+		2199A2872F15491700699F37 /* MinutColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2199A2852F15491700699F37 /* MinutColors.swift */; };
 		AAA00001001 /* MinutAlarmWidgetApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00001000 /* MinutAlarmWidgetApp.swift */; };
 		AAA00002001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00002000 /* ContentView.swift */; };
 		AAA00003001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AAA00003000 /* Assets.xcassets */; };
@@ -51,6 +53,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2199A2852F15491700699F37 /* MinutColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutColors.swift; sourceTree = "<group>"; };
 		AAA00000000 /* MinutAlarmWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MinutAlarmWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA00001000 /* MinutAlarmWidgetApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutAlarmWidgetApp.swift; sourceTree = "<group>"; };
 		AAA00002000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -130,6 +133,7 @@
 		AAA30003000 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				2199A2852F15491700699F37 /* MinutColors.swift */,
 				AAA00007000 /* SharedModels.swift */,
 				AAA00008000 /* SharedSettings.swift */,
 				AAA00009000 /* KeychainHelper.swift */,
@@ -257,6 +261,7 @@
 			files = (
 				AAA00001001 /* MinutAlarmWidgetApp.swift in Sources */,
 				AAA00002001 /* ContentView.swift in Sources */,
+				2199A2862F15491700699F37 /* MinutColors.swift in Sources */,
 				AAA00004001 /* MinutAuthService.swift in Sources */,
 				AAA00005001 /* MinutAPIService.swift in Sources */,
 				AAA00006001 /* SignInView.swift in Sources */,
@@ -273,6 +278,7 @@
 				BBB00001001 /* WidgetBundle.swift in Sources */,
 				BBB00002001 /* MinutAlarmWidget.swift in Sources */,
 				BBB00004001 /* SharedModels.swift in Sources */,
+				2199A2872F15491700699F37 /* MinutColors.swift in Sources */,
 				BBB00005001 /* SharedSettings.swift in Sources */,
 				BBB00006001 /* KeychainHelper.swift in Sources */,
 				BBB00007001 /* WidgetAPIService.swift in Sources */,

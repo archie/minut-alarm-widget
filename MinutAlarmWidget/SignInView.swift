@@ -17,18 +17,12 @@ struct SignInView: View {
             // App Icon
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.blue, .cyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(Color.minutContrast)
                     .frame(width: 120, height: 120)
-                
+
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(.white)
+                    .foregroundColor(.minutAction)
             }
             
             // Title
@@ -84,8 +78,8 @@ struct SignInView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(Color.minutContrast)
+                    .foregroundColor(.minutCalm)
                     .cornerRadius(14)
                     .font(.headline)
                 }
@@ -130,7 +124,7 @@ struct FeatureRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.blue)
+                .foregroundColor(.minutAction)
                 .frame(width: 40)
             
             VStack(alignment: .leading, spacing: 2) {

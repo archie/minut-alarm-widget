@@ -88,7 +88,7 @@ struct AuthenticatedHomeView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         Label("Widget Ready!", systemImage: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(.minutAction)
                             .font(.headline)
                         
                         Text("Add the Minut Alarm widget to your home screen:")
@@ -160,7 +160,7 @@ struct HomeRowView: View {
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(.minutAction)
                         .font(.title2)
                 }
             }
