@@ -202,21 +202,99 @@ struct MinutHomeResponse: Codable {
     let homeId: String
     let name: String
     let timezone: String?
-    let alarm: AlarmInfo
+    let alarmStatus: AlarmStatus?
+    let detailedAlarmStatus: String?
+    let alarmMode: AlarmMode?
+    let scheduledAlarmActive: Bool?
+    let silentAlarm: Bool?
+    let alarmOffGracePeriodSecs: Int?
+
+    // Additional optional fields from the API
+    let createdAt: Date?
+    let address: Address?
+    let members: [Member]?
+    let devices: [Device]?
 
     enum CodingKeys: String, CodingKey {
         case homeId = "home_id"
         case name
         case timezone
-        case alarm
+        case alarmStatus = "alarm_status"
+        case detailedAlarmStatus = "detailed_alarm_status"
+        case alarmMode = "alarm_mode"
+        case scheduledAlarmActive = "scheduled_alarm_active"
+        case silentAlarm = "silent_alarm"
+        case alarmOffGracePeriodSecs = "alarm_off_grace_period_secs"
+        case createdAt = "created_at"
+        case address
+        case members
+        case devices
+    }
+
+    var alarm: AlarmInfo {
+        AlarmInfo(
+            events: nil,
+            gracePeriodExpiresAt: nil,
+            gracePeriodSecs: alarmOffGracePeriodSecs,
+            escalationStatus: nil,
+            escalatedBy: nil,
+            escalationCancelledBy: nil,
+            escalationPeriodExpiresAt: nil,
+            escalationPeriodSeconds: nil,
+            earliestAlarmTime: nil,
+            alarmStatus: alarmStatus ?? .off,
+            alarmMode: alarmMode,
+            silentAlarm: silentAlarm,
+            scheduledAlarmActive: scheduledAlarmActive
+        )
+    }
+}
+
+struct Address: Codable {
+    let streetName1: String?
+    let streetName2: String?
+    let postCode: String?
+    let city: String?
+    let country: String?
+    let apartmentNumber: String?
+    let floorNumber: String?
+
+    enum CodingKeys: String, CodingKey {
+        case streetName1 = "street_name1"
+        case streetName2 = "street_name2"
+        case postCode = "post_code"
+        case city
+        case country
+        case apartmentNumber = "apartment_number"
+        case floorNumber = "floor_number"
+    }
+}
+
+struct Member: Codable {
+    let userId: String?
+    let fullname: String?
+    let email: String?
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case fullname
+        case email
+    }
+}
+
+struct Device: Codable {
+    let deviceId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case deviceId = "device_id"
     }
 }
 
 struct MinutAlarmUpdateRequest: Codable {
     let alarmStatus: AlarmStatus
-    let alarmMode: AlarmMode
-    let silentAlarm: Bool
-    let scheduledAlarmActive: Bool
+    let alarmMode: AlarmMode?
+    let silentAlarm: Bool?
+    let scheduledAlarmActive: Bool?
 
     enum CodingKeys: String, CodingKey {
         case alarmStatus = "alarm_status"

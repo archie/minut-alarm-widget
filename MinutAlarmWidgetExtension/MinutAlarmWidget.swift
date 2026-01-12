@@ -4,6 +4,9 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
+import os.log
+
+private let logger = Logger(subsystem: "se.akacian.minut-alarm-widget", category: "Widget")
 
 // MARK: - Timeline Entry
 
@@ -53,11 +56,13 @@ struct AlarmWidgetProvider: TimelineProvider {
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<AlarmEntry>) -> Void) {
+        logger.info("⏰ Widget: getTimeline called")
         Task {
             let entry = await fetchCurrentEntry()
-            
+
             // Refresh every 15 minutes
             let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+            logger.info("📅 Widget: Scheduling next update at \(nextUpdate)")
             let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
             completion(timeline)
         }
@@ -66,8 +71,11 @@ struct AlarmWidgetProvider: TimelineProvider {
     // MARK: - Data Fetching
     
     private func fetchCurrentEntry() async -> AlarmEntry {
+        logger.info("🔄 Widget: Starting fetchCurrentEntry")
+
         let homeId = SharedSettings.homeId
         guard !homeId.isEmpty else {
+            logger.warning("⚠️ Widget: No home selected, showing noHomeSelected state")
             return AlarmEntry(
                 date: Date(),
                 isArmed: false,
@@ -76,16 +84,25 @@ struct AlarmWidgetProvider: TimelineProvider {
             )
         }
 
+        logger.info("📍 Widget: Using home ID: \(homeId)")
+
         do {
+            logger.info("🔐 Widget: Getting valid access token...")
             let token = try await WidgetAPIService.shared.getValidAccessToken()
+            logger.info("✅ Widget: Successfully got access token")
+
+            logger.info("📡 Widget: Fetching alarm status from API...")
             let alarmInfo = try await WidgetAPIService.shared.getAlarmStatus(
                 homeId: homeId,
                 accessToken: token
             )
 
+            logger.info("✅ Widget: Successfully fetched alarm status - isArmed: \(alarmInfo.isArmed), status: \(alarmInfo.alarmStatus.rawValue)")
+
             // Cache the state
             SharedSettings.lastKnownAlarmState = alarmInfo.isArmed
             SharedSettings.lastUpdateTime = Date()
+            logger.info("💾 Widget: Cached alarm state: \(alarmInfo.isArmed)")
 
             return AlarmEntry(
                 date: Date(),
@@ -95,7 +112,10 @@ struct AlarmWidgetProvider: TimelineProvider {
             )
 
         } catch {
+            logger.error("❌ Widget: Error occurred - \(error.localizedDescription)")
+
             if case MinutAuthError.missingCredentials = error {
+                logger.warning("🔒 Widget: Missing credentials, showing notAuthenticated state")
                 return AlarmEntry(
                     date: Date(),
                     isArmed: false,
@@ -104,10 +124,22 @@ struct AlarmWidgetProvider: TimelineProvider {
                 )
             }
 
+            if let authError = error as? MinutAuthError {
+                logger.error("🔐 Widget: Auth error type: \(String(describing: authError))")
+            } else if let apiError = error as? MinutAPIError {
+                logger.error("📡 Widget: API error type: \(String(describing: apiError))")
+            } else {
+                logger.error("❓ Widget: Unknown error type: \(String(describing: type(of: error)))")
+            }
+
             // Return cached state on error
+            let cachedState = SharedSettings.lastKnownAlarmState
+            let lastUpdate = SharedSettings.lastUpdateTime
+            logger.warning("🗂️ Widget: Using cached state - isArmed: \(cachedState), last updated: \(lastUpdate?.description ?? "never")")
+
             return AlarmEntry(
                 date: Date(),
-                isArmed: SharedSettings.lastKnownAlarmState,
+                isArmed: cachedState,
                 homeId: homeId,
                 state: .error(error.localizedDescription)
             )
@@ -134,27 +166,50 @@ struct ToggleAlarmIntent: AppIntent {
     }
     
     func perform() async throws -> some IntentResult {
+        logger.info("🎯 Widget Intent: Toggle alarm to \(self.enable ? "ON" : "OFF")")
+
         let homeId = SharedSettings.homeId
         guard !homeId.isEmpty else {
+            logger.error("❌ Widget Intent: No home selected")
             throw MinutAPIError.notFound
         }
-        
-        let token = try await WidgetAPIService.shared.getValidAccessToken()
-        
-        try await WidgetAPIService.shared.setAlarmStatus(
-            homeId: homeId,
-            enabled: enable,
-            accessToken: token
-        )
-        
-        // Update cached state
-        SharedSettings.lastKnownAlarmState = enable
-        SharedSettings.lastUpdateTime = Date()
-        
-        // Reload widget
-        WidgetCenter.shared.reloadTimelines(ofKind: "MinutAlarmWidget")
-        
-        return .result()
+
+        logger.info("📍 Widget Intent: Using home ID: \(homeId)")
+
+        do {
+            logger.info("🔐 Widget Intent: Getting access token...")
+            let token = try await WidgetAPIService.shared.getValidAccessToken()
+
+            logger.info("📡 Widget Intent: Setting alarm status to \(self.enable ? "ON" : "OFF")...")
+            try await WidgetAPIService.shared.setAlarmStatus(
+                homeId: homeId,
+                enabled: self.enable,
+                accessToken: token
+            )
+
+            logger.info("✅ Widget Intent: Successfully set alarm status")
+
+            // Fetch the actual state from API to ensure accuracy
+            logger.info("📡 Widget Intent: Fetching actual alarm state after update...")
+            let alarmInfo = try await WidgetAPIService.shared.getAlarmStatus(
+                homeId: homeId,
+                accessToken: token
+            )
+
+            // Update cached state with actual API response
+            SharedSettings.lastKnownAlarmState = alarmInfo.isArmed
+            SharedSettings.lastUpdateTime = Date()
+            logger.info("💾 Widget Intent: Updated cached state to \(alarmInfo.isArmed) (status: \(alarmInfo.alarmStatus.rawValue))")
+
+            // Reload widget
+            WidgetCenter.shared.reloadTimelines(ofKind: "MinutAlarmWidget")
+            logger.info("🔄 Widget Intent: Triggered widget reload")
+
+            return .result()
+        } catch {
+            logger.error("❌ Widget Intent: Failed to toggle alarm - \(error.localizedDescription)")
+            throw error
+        }
     }
 }
 
@@ -181,77 +236,65 @@ struct AlarmWidgetView: View {
     }
     
     // MARK: - Ready State
-    
+
     @ViewBuilder
     private var readyView: some View {
-        VStack(spacing: 12) {
-            statusIndicator
+        VStack(spacing: 8) {
             toggleButton
-            
-            if family != .systemSmall {
-                Text("Updated \(entry.date, style: .relative) ago")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
+
+            Text("\(entry.date, style: .relative) ago")
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
-        .padding()
+        .padding(8)
         .containerBackground(.fill.tertiary, for: .widget)
     }
-    
+
     @ViewBuilder
     private var readyViewWithError: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             HStack {
                 Spacer()
                 Image(systemName: "exclamationmark.circle.fill")
                     .font(.caption)
                     .foregroundColor(.orange)
             }
-            
-            statusIndicator
+
             toggleButton
+            
+            Text("\(entry.date, style: .relative) ago")
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
-        .padding()
+        .padding(8)
         .containerBackground(.fill.tertiary, for: .widget)
     }
-    
-    private var statusIndicator: some View {
-        HStack(spacing: 8) {
-            Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
-                .font(.title2)
-                .foregroundColor(entry.isArmed ? .green : .secondary)
-            
-            Text(entry.isArmed ? "Armed" : "Disarmed")
-                .font(.headline)
-                .foregroundColor(entry.isArmed ? .green : .secondary)
-        }
-    }
-    
+
     @ViewBuilder
     private var toggleButton: some View {
         if #available(iOS 17.0, *) {
             Button(intent: ToggleAlarmIntent(enable: !entry.isArmed)) {
                 HStack {
-                    Image(systemName: entry.isArmed ? "lock.open.fill" : "lock.fill")
-                    Text(entry.isArmed ? "Disarm" : "Arm")
+                    Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
+                    Text(entry.isArmed ? "Alarm on" : "Alarm off")
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(entry.isArmed ? Color.orange : Color.green)
-                .foregroundColor(.white)
+                .padding(.vertical, 12)
+                .background(entry.isArmed ? Color.green : Color.gray.opacity(0.3))
+                .foregroundColor(entry.isArmed ? .white : .primary)
                 .cornerRadius(10)
             }
             .buttonStyle(.plain)
         } else {
             Link(destination: URL(string: "minutalarm://toggle?action=\(entry.isArmed ? "disarm" : "arm")")!) {
                 HStack {
-                    Image(systemName: entry.isArmed ? "lock.open.fill" : "lock.fill")
-                    Text(entry.isArmed ? "Disarm" : "Arm")
+                    Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
+                    Text(entry.isArmed ? "Alarm on" : "Alarm off")
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(entry.isArmed ? Color.orange : Color.green)
-                .foregroundColor(.white)
+                .padding(.vertical, 12)
+                .background(entry.isArmed ? Color.green : Color.gray.opacity(0.3))
+                .foregroundColor(entry.isArmed ? .white : .primary)
                 .cornerRadius(10)
             }
         }
