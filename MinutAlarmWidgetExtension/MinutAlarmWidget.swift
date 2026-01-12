@@ -13,15 +13,26 @@ private let logger = Logger(subsystem: "se.akacian.minut-alarm-widget", category
 struct AlarmEntry: TimelineEntry {
     let date: Date
     let isArmed: Bool
+    let isInGracePeriod: Bool
+    let gracePeriodExpiresAt: Date?
     let homeId: String
     let state: WidgetState
-    
+
     enum WidgetState {
         case ready
         case loading
         case notAuthenticated
         case noHomeSelected
         case error(String)
+    }
+
+    init(date: Date, isArmed: Bool, isInGracePeriod: Bool = false, gracePeriodExpiresAt: Date? = nil, homeId: String, state: WidgetState) {
+        self.date = date
+        self.isArmed = isArmed
+        self.isInGracePeriod = isInGracePeriod
+        self.gracePeriodExpiresAt = gracePeriodExpiresAt
+        self.homeId = homeId
+        self.state = state
     }
 }
 
@@ -60,9 +71,17 @@ struct AlarmWidgetProvider: TimelineProvider {
         Task {
             let entry = await fetchCurrentEntry()
 
-            // Refresh every 15 minutes
-            let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-            logger.info("📅 Widget: Scheduling next update at \(nextUpdate)")
+            // If in grace period, refresh when it expires (plus a small buffer)
+            let nextUpdate: Date
+            if entry.isInGracePeriod, let expiresAt = entry.gracePeriodExpiresAt {
+                nextUpdate = expiresAt.addingTimeInterval(3) // Refresh 3 seconds after grace period ends
+                logger.info("⏱️ Widget: In grace period, scheduling update at \(nextUpdate)")
+            } else {
+                // Normal refresh every 15 minutes
+                nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+                logger.info("📅 Widget: Scheduling next update at \(nextUpdate)")
+            }
+
             let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
             completion(timeline)
         }
@@ -97,7 +116,12 @@ struct AlarmWidgetProvider: TimelineProvider {
                 accessToken: token
             )
 
-            logger.info("✅ Widget: Successfully fetched alarm status - isArmed: \(alarmInfo.isArmed), status: \(alarmInfo.alarmStatus.rawValue)")
+            let isInGracePeriod = alarmInfo.isInArmingGracePeriod
+            logger.info("✅ Widget: Successfully fetched alarm status - isArmed: \(alarmInfo.isArmed), status: \(alarmInfo.alarmStatus.rawValue), detailed: \(alarmInfo.detailedAlarmStatus ?? "nil"), inGracePeriod: \(isInGracePeriod)")
+
+            if isInGracePeriod, let expiresAt = alarmInfo.gracePeriodExpiresAt {
+                logger.info("⏱️ Widget: Grace period expires at \(expiresAt)")
+            }
 
             // Cache the state
             SharedSettings.lastKnownAlarmState = alarmInfo.isArmed
@@ -107,6 +131,8 @@ struct AlarmWidgetProvider: TimelineProvider {
             return AlarmEntry(
                 date: Date(),
                 isArmed: alarmInfo.isArmed,
+                isInGracePeriod: isInGracePeriod,
+                gracePeriodExpiresAt: alarmInfo.gracePeriodExpiresAt,
                 homeId: homeId,
                 state: .ready
             )
@@ -166,7 +192,7 @@ struct ToggleAlarmIntent: AppIntent {
     }
     
     func perform() async throws -> some IntentResult {
-        logger.info("🎯 Widget Intent: Toggle alarm to \(self.enable ? "ON" : "OFF")")
+        logger.info("🎯 Widget Intent: Setting alarm to \(self.enable ? "ON" : "OFF")")
 
         let homeId = SharedSettings.homeId
         guard !homeId.isEmpty else {
@@ -199,7 +225,7 @@ struct ToggleAlarmIntent: AppIntent {
             // Update cached state with actual API response
             SharedSettings.lastKnownAlarmState = alarmInfo.isArmed
             SharedSettings.lastUpdateTime = Date()
-            logger.info("💾 Widget Intent: Updated cached state to \(alarmInfo.isArmed) (status: \(alarmInfo.alarmStatus.rawValue))")
+            logger.info("💾 Widget Intent: Updated cached state to \(alarmInfo.isArmed) (status: \(alarmInfo.alarmStatus.rawValue), detailed: \(alarmInfo.detailedAlarmStatus ?? "nil"), inGracePeriod: \(alarmInfo.isInArmingGracePeriod))")
 
             // Reload widget
             WidgetCenter.shared.reloadTimelines(ofKind: "MinutAlarmWidget")
@@ -273,30 +299,57 @@ struct AlarmWidgetView: View {
     @ViewBuilder
     private var toggleButton: some View {
         if #available(iOS 17.0, *) {
-            Button(intent: ToggleAlarmIntent(enable: !entry.isArmed)) {
-                HStack {
-                    Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
-                    Text(entry.isArmed ? "Alarm on" : "Alarm off")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(entry.isArmed ? Color.green : Color.gray.opacity(0.3))
-                .foregroundColor(entry.isArmed ? .white : .primary)
-                .cornerRadius(10)
+            // In grace period: always send "off" to cancel, otherwise toggle
+            let enableAlarm = entry.isInGracePeriod ? false : !entry.isArmed
+
+            Button(intent: ToggleAlarmIntent(enable: enableAlarm)) {
+                buttonContent
             }
             .buttonStyle(.plain)
         } else {
-            Link(destination: URL(string: "minutalarm://toggle?action=\(entry.isArmed ? "disarm" : "arm")")!) {
-                HStack {
-                    Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
-                    Text(entry.isArmed ? "Alarm on" : "Alarm off")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(entry.isArmed ? Color.green : Color.gray.opacity(0.3))
-                .foregroundColor(entry.isArmed ? .white : .primary)
-                .cornerRadius(10)
+            let action = entry.isInGracePeriod ? "disarm" : (entry.isArmed ? "disarm" : "arm")
+            Link(destination: URL(string: "minutalarm://toggle?action=\(action)")!) {
+                buttonContent
             }
+        }
+    }
+
+    @ViewBuilder
+    private var buttonContent: some View {
+        if entry.isInGracePeriod, let expiresAt = entry.gracePeriodExpiresAt {
+            // Grace period countdown view
+            VStack(spacing: 4) {
+                HStack {
+                    Image(systemName: "timer")
+                    Text("Arming in")
+                }
+                .font(.caption)
+
+                Text(expiresAt, style: .timer)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .monospacedDigit()
+                    .multilineTextAlignment(.center)
+
+                Text("Tap to cancel")
+                    .font(.caption2)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 8)
+            .background(Color.orange)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+        } else {
+            // Normal armed/disarmed view
+            HStack {
+                Image(systemName: entry.isArmed ? "lock.shield.fill" : "lock.shield")
+                Text(entry.isArmed ? "Alarm on" : "Alarm off")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(entry.isArmed ? Color.green : Color.gray.opacity(0.3))
+            .foregroundColor(entry.isArmed ? .white : .primary)
+            .cornerRadius(10)
         }
     }
     
@@ -379,4 +432,17 @@ struct MinutAlarmWidget: Widget {
     MinutAlarmWidget()
 } timeline: {
     AlarmEntry(date: Date(), isArmed: false, homeId: "home1", state: .ready)
+}
+
+#Preview("Grace Period", as: .systemMedium) {
+    MinutAlarmWidget()
+} timeline: {
+    AlarmEntry(
+        date: Date(),
+        isArmed: true,
+        isInGracePeriod: true,
+        gracePeriodExpiresAt: Date().addingTimeInterval(45),
+        homeId: "home1",
+        state: .ready
+    )
 }

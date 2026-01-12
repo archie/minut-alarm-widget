@@ -109,11 +109,17 @@ The widget uses `AppIntents` framework for direct button interactions:
 ### Alarm Status Structure
 The `GET /homes/{id}` endpoint returns alarm info with:
 - `alarm_status`: enum (on|off|off_grace_period|on_grace_period|critical_event)
+- `detailed_alarm_status`: string (on_grace_period when arming countdown is active)
 - `alarm_mode`: enum (manual)
 - `silent_alarm`: boolean
 - `scheduled_alarm_active`: boolean
-- `escalation_status`: enum (none|countdown|escalated_automatically|escalated_manually|escalation_cancelled)
-- Grace period and escalation timing fields
+- `alarm_info`: nested object with grace period details
+  - `alarm_info_type`: string (e.g., "on_grace_period")
+  - `grace_period_secs`: number (seconds remaining)
+  - `grace_period_expires_at`: ISO 8601 date
+- `grace_period_expires_at`: ISO 8601 date (top-level, when grace period ends)
+
+**Grace Period Handling**: When arming the alarm, the API may return `detailed_alarm_status: "on_grace_period"` with a countdown. The widget displays this countdown and allows canceling by tapping. The `AlarmInfo.isInArmingGracePeriod` computed property checks for this state.
 
 To toggle alarm via `PATCH /homes/{id}/alarm`:
 ```json

@@ -102,7 +102,8 @@ class WidgetAPIService {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let homeResponse = try decoder.decode(MinutHomeResponse.self, from: data)
-        logger.info("✅ WidgetAPI: Decoded alarm status: \(homeResponse.alarm.alarmStatus.rawValue)")
+        let earliest = homeResponse.alarm.gracePeriodExpiresAt?.ISO8601Format() ?? "unknown"
+        logger.info("✅ WidgetAPI: Decoded alarm status: \(homeResponse.alarm.alarmStatus.rawValue), time: \(earliest)")
         return homeResponse.alarm
     }
 

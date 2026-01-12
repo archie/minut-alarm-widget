@@ -135,6 +135,7 @@ struct AlarmInfo: Codable {
     let escalationPeriodSeconds: Int?
     let earliestAlarmTime: Date?
     let alarmStatus: AlarmStatus
+    let detailedAlarmStatus: String?
     let alarmMode: AlarmMode?
     let silentAlarm: Bool?
     let scheduledAlarmActive: Bool?
@@ -150,13 +151,32 @@ struct AlarmInfo: Codable {
         case escalationPeriodSeconds = "escalation_period_seconds"
         case earliestAlarmTime = "earliest_alarm_time"
         case alarmStatus = "alarm_status"
+        case detailedAlarmStatus = "detailed_alarm_status"
         case alarmMode = "alarm_mode"
         case silentAlarm = "silent_alarm"
         case scheduledAlarmActive = "scheduled_alarm_active"
     }
 
+    /// True when alarm is fully on or in the process of turning on (grace period countdown)
     var isArmed: Bool {
-        alarmStatus == .on || alarmStatus == .onGracePeriod
+        alarmStatus == .on || alarmStatus == .onGracePeriod || isInArmingGracePeriod
+    }
+
+    /// True when alarm is in grace period countdown before turning on
+    var isInArmingGracePeriod: Bool {
+        detailedAlarmStatus == "on_grace_period"
+    }
+
+    /// True when alarm is in grace period countdown before turning off
+    var isInDisarmingGracePeriod: Bool {
+        detailedAlarmStatus == "off_grace_period"
+    }
+
+    /// Seconds remaining in grace period, nil if not in grace period
+    var gracePeriodSecondsRemaining: TimeInterval? {
+        guard let expiresAt = gracePeriodExpiresAt else { return nil }
+        let remaining = expiresAt.timeIntervalSinceNow
+        return remaining > 0 ? remaining : nil
     }
 }
 
@@ -208,6 +228,9 @@ struct MinutHomeResponse: Codable {
     let scheduledAlarmActive: Bool?
     let silentAlarm: Bool?
     let alarmOffGracePeriodSecs: Int?
+    let gracePeriodExpiresAt: Date?
+    let earliestAlarmTime: Date?
+    let alarmInfo: AlarmInfoDetail?
 
     // Additional optional fields from the API
     let createdAt: Date?
@@ -225,6 +248,9 @@ struct MinutHomeResponse: Codable {
         case scheduledAlarmActive = "scheduled_alarm_active"
         case silentAlarm = "silent_alarm"
         case alarmOffGracePeriodSecs = "alarm_off_grace_period_secs"
+        case gracePeriodExpiresAt = "grace_period_expires_at"
+        case earliestAlarmTime = "earliest_alarm_time"
+        case alarmInfo = "alarm_info"
         case createdAt = "created_at"
         case address
         case members
@@ -234,19 +260,33 @@ struct MinutHomeResponse: Codable {
     var alarm: AlarmInfo {
         AlarmInfo(
             events: nil,
-            gracePeriodExpiresAt: nil,
-            gracePeriodSecs: alarmOffGracePeriodSecs,
+            gracePeriodExpiresAt: alarmInfo?.gracePeriodExpiresAt ?? gracePeriodExpiresAt,
+            gracePeriodSecs: alarmInfo?.gracePeriodSecs.map { Int($0) } ?? alarmOffGracePeriodSecs,
             escalationStatus: nil,
             escalatedBy: nil,
             escalationCancelledBy: nil,
             escalationPeriodExpiresAt: nil,
             escalationPeriodSeconds: nil,
-            earliestAlarmTime: nil,
+            earliestAlarmTime: earliestAlarmTime,
             alarmStatus: alarmStatus ?? .off,
+            detailedAlarmStatus: detailedAlarmStatus,
             alarmMode: alarmMode,
             silentAlarm: silentAlarm,
             scheduledAlarmActive: scheduledAlarmActive
         )
+    }
+}
+
+// Nested alarm_info object from API
+struct AlarmInfoDetail: Codable {
+    let alarmInfoType: String?
+    let gracePeriodSecs: Double?
+    let gracePeriodExpiresAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case alarmInfoType = "alarm_info_type"
+        case gracePeriodSecs = "grace_period_secs"
+        case gracePeriodExpiresAt = "grace_period_expires_at"
     }
 }
 
