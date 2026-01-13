@@ -16,7 +16,22 @@ struct KeychainHelper {
     static func saveCredentials(_ credentials: MinutCredentials) throws {
         let data = try JSONEncoder().encode(credentials)
 
-        var query: [String: Any] = [
+        // Query to find existing item (without data)
+        var deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: credentialsKey
+        ]
+
+        #if !targetEnvironment(simulator)
+        deleteQuery[kSecAttrAccessGroup as String] = accessGroup
+        #endif
+
+        // Delete existing item first
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        // Query to add new item (with data)
+        var addQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: credentialsKey,
@@ -24,17 +39,13 @@ struct KeychainHelper {
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
 
-        // Only use access group on device (simulator has issues with keychain access groups)
         #if !targetEnvironment(simulator)
-        query[kSecAttrAccessGroup as String] = accessGroup
+        addQuery[kSecAttrAccessGroup as String] = accessGroup
         #endif
-        
-        // Delete existing item first
-        SecItemDelete(query as CFDictionary)
-        
+
         // Add new item
-        let status = SecItemAdd(query as CFDictionary, nil)
-        
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+
         guard status == errSecSuccess else {
             throw KeychainError.saveFailed(status)
         }

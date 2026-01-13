@@ -14,6 +14,8 @@
 		2199A28D2F16834400699F37 /* code_review.md in Resources */ = {isa = PBXBuildFile; fileRef = 2199A2892F16834400699F37 /* code_review.md */; };
 		21C047712F1684E500061699 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047702F1684E500061699 /* Secrets.swift */; };
 		21C047722F1684E500061699 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047702F1684E500061699 /* Secrets.swift */; };
+		21C047742F16881700061699 /* MinutNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047732F16881700061699 /* MinutNetworkClient.swift */; };
+		21C047752F16881700061699 /* MinutNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047732F16881700061699 /* MinutNetworkClient.swift */; };
 		AAA00001001 /* MinutAlarmWidgetApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00001000 /* MinutAlarmWidgetApp.swift */; };
 		AAA00002001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00002000 /* ContentView.swift */; };
 		AAA00003001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AAA00003000 /* Assets.xcassets */; };
@@ -63,6 +65,7 @@
 		2199A2892F16834400699F37 /* code_review.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = code_review.md; sourceTree = "<group>"; };
 		2199A28A2F16834400699F37 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		21C047702F1684E500061699 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		21C047732F16881700061699 /* MinutNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutNetworkClient.swift; sourceTree = "<group>"; };
 		AAA00000000 /* MinutAlarmWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MinutAlarmWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA00001000 /* MinutAlarmWidgetApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutAlarmWidgetApp.swift; sourceTree = "<group>"; };
 		AAA00002000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -145,6 +148,7 @@
 		AAA30003000 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				21C047732F16881700061699 /* MinutNetworkClient.swift */,
 				21C047702F1684E500061699 /* Secrets.swift */,
 				2199A2852F15491700699F37 /* MinutColors.swift */,
 				AAA00007000 /* SharedModels.swift */,
@@ -279,6 +283,7 @@
 				21C047722F1684E500061699 /* Secrets.swift in Sources */,
 				AAA00002001 /* ContentView.swift in Sources */,
 				2199A2862F15491700699F37 /* MinutColors.swift in Sources */,
+				21C047742F16881700061699 /* MinutNetworkClient.swift in Sources */,
 				AAA00004001 /* MinutAuthService.swift in Sources */,
 				AAA00005001 /* MinutAPIService.swift in Sources */,
 				AAA00006001 /* SignInView.swift in Sources */,
@@ -300,6 +305,7 @@
 				BBB00005001 /* SharedSettings.swift in Sources */,
 				BBB00006001 /* KeychainHelper.swift in Sources */,
 				BBB00007001 /* WidgetAPIService.swift in Sources */,
+				21C047752F16881700061699 /* MinutNetworkClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
