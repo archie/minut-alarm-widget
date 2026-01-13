@@ -107,6 +107,9 @@ struct AuthenticatedHomeView: View {
                 }
             }
         }
+        .refreshable {
+            await loadHomes()
+        }
     }
     
     private func loadHomes() async {
