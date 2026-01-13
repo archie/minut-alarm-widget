@@ -1,233 +1,291 @@
 # Minut Alarm Widget
 
-An iOS app and widget for controlling your Minut home alarm from your home screen.
+An iOS app with a home screen widget for controlling Minut home alarms.
 
-## Features
+## Project Purpose
 
-- **OAuth2 Authentication** - Secure sign-in with your Minut account
-- **Home Selection** - Choose which home to control
-- **Home Screen Widget** - Arm/disarm your alarm without opening the app
-- **Interactive Widget** - iOS 17+ support for direct button taps
-- **Grace Period Support** - Live countdown timer when alarm is arming
-- **Brand Colors** - Minut's official brand colors throughout the UI
-- **Offline Fallback** - Shows cached state when network is unavailable
+This app provides a convenient way to arm and disarm Minut home security alarms directly from the iOS home screen. Instead of opening the Minut app, users can tap a widget button to toggle their alarm status.
 
-## Setup Instructions
+**Key features:**
+- OAuth2 authentication with Minut accounts
+- Home selection for users with multiple properties
+- Interactive home screen widget (iOS 17+)
+- Live countdown timer during alarm arming grace period
+- Offline fallback showing cached alarm state
 
-### 1. Get Minut API Credentials
+**Intended users:** Minut home alarm owners who want quick access to arm/disarm controls.
 
-1. Go to [api.minut.com](https://api.minut.com) and sign in
-2. Navigate to the API Client dashboard
-3. Create a new client with:
-   - **Name**: Your app name (e.g., "My Alarm Widget")
-   - **Redirect URI**: `minutalarm://callback`
-4. Save your **Client ID** and **Client Secret**
+## How It Works
 
-### 2. Configure OAuth Credentials
+### Architecture
 
-1. Open the project in Xcode
-2. Copy the secrets template:
+The project uses a two-target architecture with a main app and widget extension running in separate processes:
+
+```
+┌─────────────────────────┐      ┌──────────────────────────┐
+│      Main App           │      │    Widget Extension      │
+├─────────────────────────┤      ├──────────────────────────┤
+│ MinutAuthService        │      │ WidgetAPIService         │
+│ (OAuth2 flow)           │      │ (API calls only)         │
+│                         │      │                          │
+│ MinutAPIService         │      │ AlarmWidgetProvider      │
+│ (Full API access)       │      │ (Timeline management)    │
+└───────────┬─────────────┘      └────────────┬─────────────┘
+            │                                 │
+            ▼                                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Shared Resources                         │
+├─────────────────────────────────────────────────────────────┤
+│ Keychain (MinutCredentials: access token, refresh token)    │
+│ App Group UserDefaults (selected home ID, cached state)     │
+│ MinutNetworkClient (HTTP client, token refresh)             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow
+
+1. **Authentication**: Main app handles OAuth2 via `ASWebAuthenticationSession`, stores tokens in Keychain
+2. **Home Selection**: User selects a home, ID saved to App Group UserDefaults
+3. **Widget Updates**: Widget timeline provider reads shared data, fetches alarm status from API
+4. **Token Refresh**: Both targets automatically refresh tokens when expiring (< 5 minutes remaining)
+5. **Alarm Toggle**: Widget buttons call `PATCH /homes/{id}/alarm` via `WidgetAPIService`
+
+### External Dependencies
+
+- **Minut API** (`api.minut.com/v8`): OAuth2 endpoints, home/alarm status endpoints
+- **App Groups**: Cross-process data sharing between app and widget
+- **Keychain Services**: Secure credential storage
+
+No external packages or CocoaPods are used. Pure native Swift with iOS frameworks.
+
+## Getting Started
+
+### Prerequisites
+
+- macOS with Xcode 15.0+
+- iOS 17.0+ device or simulator (iOS 16 works with limited widget interactivity)
+- Apple Developer account (for App Groups capability)
+- Minut account with API access
+
+### Installation
+
+1. Clone the repository:
    ```bash
-   cp Shared/Secrets.swift.template Shared/Secrets.swift
+   git clone <repository-url>
+   cd alarm-widget
    ```
-3. Edit `Shared/Secrets.swift` and add your credentials:
-   ```swift
-   enum Secrets {
-       static let clientId = "YOUR_CLIENT_ID"
-       static let clientSecret = "YOUR_CLIENT_SECRET"
-   }
+
+2. Open the project:
+   ```bash
+   open MinutAlarmWidget.xcodeproj
    ```
-4. Add `Secrets.swift` to both targets in Xcode:
+
+### Configuration
+
+#### 1. Set up OAuth credentials
+
+Create the secrets file from the template:
+```bash
+cp Shared/Secrets.swift.template Shared/Secrets.swift
+```
+
+Edit `Shared/Secrets.swift` with your Minut API credentials:
+```swift
+enum Secrets {
+    static let clientId = "YOUR_CLIENT_ID"
+    static let clientSecret = "YOUR_CLIENT_SECRET"
+}
+```
+
+To obtain credentials:
+1. Go to [api.minut.com](https://api.minut.com) and sign in
+2. Create a new API client with redirect URI: `minutalarm://callback`
+3. Copy the Client ID and Client Secret
+
+> `Secrets.swift` is gitignored to prevent credential exposure.
+
+#### 2. Configure App Group
+
+The App Group ID `group.se.akacian.minut-alarm` must be registered:
+
+1. In [Apple Developer Portal](https://developer.apple.com), create an App Group identifier
+2. In Xcode, add the **App Groups** capability to both targets:
    - MinutAlarmWidget
    - MinutAlarmWidgetExtension
 
-> **Note:** `Secrets.swift` is gitignored to prevent credentials from being committed.
+If using a different App Group ID, update:
+- `Shared/SharedSettings.swift` line 12
+- `Shared/KeychainHelper.swift` lines 10-11
 
-### 3. Configure App Group (Required for Widget)
+#### 3. Update Bundle Identifiers
 
-The app group allows data sharing between the main app and widget extension.
+If using different bundle identifiers:
+1. Update target settings in Xcode
+2. Update corresponding entitlement files
 
-1. Sign in to [Apple Developer Portal](https://developer.apple.com)
-2. Go to **Certificates, Identifiers & Profiles** → **Identifiers**
-3. Create a new **App Group** with ID: `group.se.akacian.minut-alarm` (or your own)
-4. In Xcode:
-   - Select the **MinutAlarmWidget** target → **Signing & Capabilities**
-   - Add **App Groups** capability and select your group
-   - Repeat for **MinutAlarmWidgetExtension** target
+### Running the App
 
-If using a different App Group ID, update it in:
-- `Shared/SharedSettings.swift` (line 12)
-- `Shared/KeychainHelper.swift` (lines 10-11)
-
-### 4. Update Bundle Identifiers
-
-1. In Xcode, select each target and update:
-   - **MinutAlarmWidget**: `se.akacian.minut-alarm-widget` (or your own)
-   - **MinutAlarmWidgetExtension**: `se.akacian.minut-alarm-widget.Widget`
-2. Update the entitlements files to match:
-   - `MinutAlarmWidget/MinutAlarmWidget.entitlements`
-   - `MinutAlarmWidgetExtension/MinutAlarmWidgetExtension.entitlements`
-
-### 5. Build and Run
-
-1. Select your target device or simulator (iOS 17+ recommended)
-2. Build and run the main app first
+1. Select your target device (physical device recommended for widget testing)
+2. Build and run the **MinutAlarmWidget** scheme
 3. Sign in with your Minut account
 4. Select a home from the list
-5. Add the widget to your home screen:
-   - Long press on home screen
-   - Tap the + button
-   - Search for "Minut Alarm"
-   - Choose widget size and tap "Add Widget"
 
-## Project Structure
+### Adding the Widget
 
-```
-alarm-widget/
-├── MinutAlarmWidget/              # Main iOS app
-│   ├── MinutAlarmWidgetApp.swift  # App entry point
-│   ├── ContentView.swift          # Main UI with home selection
-│   ├── SignInView.swift           # OAuth sign-in screen
-│   └── Services/
-│       ├── MinutAuthService.swift # OAuth2 flow (143 lines)
-│       └── MinutAPIService.swift  # API wrapper (28 lines)
-│
-├── MinutAlarmWidgetExtension/     # Widget extension
-│   ├── WidgetBundle.swift         # Widget entry point
-│   ├── MinutAlarmWidget.swift     # Widget UI & timeline provider
-│   └── WidgetAPIService.swift     # Widget API wrapper (28 lines)
-│
-└── Shared/                        # Shared code (both targets)
-    ├── MinutNetworkClient.swift   # Centralized networking (247 lines)
-    ├── SharedModels.swift         # Data models & API responses
-    ├── SharedSettings.swift       # App Group UserDefaults
-    ├── KeychainHelper.swift       # Secure credential storage
-    ├── MinutColors.swift          # Minut brand colors
-    ├── Secrets.swift              # OAuth credentials (gitignored)
-    └── Secrets.swift.template     # Template for credentials
-```
+1. Long-press on the iOS home screen
+2. Tap the **+** button
+3. Search for "Minut Alarm"
+4. Select widget size and tap **Add Widget**
 
-## Architecture
+## Usage
 
-### Networking Layer
+### Common Workflows
 
-All HTTP operations flow through `MinutNetworkClient`:
-- Token exchange and refresh
-- API request handling
-- Error handling
-- Comprehensive logging
+**Arming the alarm:**
+- Tap the arm button on the widget
+- A countdown timer displays during the grace period
+- Tap again to cancel during grace period
 
-Both `MinutAPIService` and `WidgetAPIService` are thin wrappers that delegate to the shared network client, eliminating code duplication.
+**Disarming the alarm:**
+- Tap the disarm button on the widget
+- Status updates immediately
 
-### Authentication
+**Switching homes:**
+- Open the main app
+- Select a different home from the list
+- Widget updates automatically
 
-- OAuth2 authorization code flow
-- Tokens stored securely in Keychain with App Group access
-- Automatic token refresh when expiring (< 5 minutes remaining)
-- Widget can refresh tokens independently
+### Widget States
 
-### Widget Timeline
+| State | Description |
+|-------|-------------|
+| Ready | Shows arm/disarm button based on current status |
+| Grace Period | Countdown timer with cancel option |
+| Loading | Spinner during API calls |
+| Not Authenticated | Prompts to open app and sign in |
+| No Home Selected | Prompts to open app and select home |
+| Error | Shows cached state with error indicator |
 
-- Refreshes every 15 minutes normally
-- During grace period: refreshes 3 seconds after expiry
-- Shows cached state when offline or on error
-- Distinct states: ready, loading, not authenticated, no home selected, error
+### API Endpoints
 
-## API Endpoints Used
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
 | `/v8/oauth/authorize` | GET | OAuth authorization |
-| `/v8/oauth/token` | POST | Token exchange & refresh |
+| `/v8/oauth/token` | POST | Token exchange and refresh |
 | `/v8/homes` | GET | List user's homes |
-| `/v8/homes/{id}` | GET | Get home details & alarm status |
+| `/v8/homes/{id}` | GET | Get alarm status |
 | `/v8/homes/{id}/alarm` | PATCH | Set alarm status |
-
-## Brand Colors
-
-The app uses Minut's official brand colors:
-
-- **Contrast** (#1C1A27) - Dark UI elements, buttons
-- **Action** (#F8C200) - Primary actions, highlights
-- **Clarity** (#BACDDF) - Secondary backgrounds
-- **Calm** (#F8F5F1) - Text on dark backgrounds
-
-Colors are defined in `Shared/MinutColors.swift` and used throughout both the app and widget.
-
-## Troubleshooting
-
-### "Sign In Required" in Widget
-- Open the main app and sign in
-- Verify App Group is configured correctly for both targets
-- Check that credentials are in the Keychain (sign in again if needed)
-
-### Widget Not Updating
-- Ensure a home is selected in the main app
-- Pull down on home screen to refresh widgets
-- Check Console.app for logs (filter by "Widget" or "Network")
-
-### OAuth Redirect Failing
-- Verify redirect URI matches exactly: `minutalarm://callback`
-- Check URL scheme is in `Info.plist`
-- Ensure it's configured in Minut developer portal
-
-### Keychain Error -34018 (Simulator)
-- This is expected on simulator - keychain access groups don't work reliably
-- Code automatically disables access groups on simulator
-- Test on physical device for production behavior
-
-### Widget Shows Cached State
-- Widget falls back to cached state when API fails
-- Look for error indicator (orange exclamation mark)
-- Check network connectivity
-- Verify credentials haven't expired
 
 ## Development
 
-### Adding New Features
+### Project Structure
 
-1. **API Changes**: Update `MinutNetworkClient.swift`
-2. **Models**: Update `SharedModels.swift`
-3. **UI**: Update view files in respective targets
-4. **Widget**: Update `MinutAlarmWidget.swift`
+```
+alarm-widget/
+├── MinutAlarmWidget/                 # Main app target
+│   ├── MinutAlarmWidgetApp.swift     # App entry point
+│   ├── ContentView.swift             # Home selection UI
+│   ├── SignInView.swift              # OAuth sign-in screen
+│   └── Services/
+│       ├── MinutAuthService.swift    # OAuth2 flow
+│       └── MinutAPIService.swift     # API wrapper
+│
+├── MinutAlarmWidgetExtension/        # Widget extension target
+│   ├── WidgetBundle.swift            # Widget entry point
+│   ├── MinutAlarmWidget.swift        # Widget UI and timeline
+│   └── WidgetAPIService.swift        # Widget API wrapper
+│
+└── Shared/                           # Code compiled into both targets
+    ├── MinutNetworkClient.swift      # HTTP client
+    ├── SharedModels.swift            # Data models
+    ├── SharedSettings.swift          # App Group UserDefaults
+    ├── KeychainHelper.swift          # Keychain access
+    ├── MinutColors.swift             # Brand colors
+    └── Secrets.swift                 # OAuth credentials (gitignored)
+```
+
+### Build Commands
+
+```bash
+# Open in Xcode
+open MinutAlarmWidget.xcodeproj
+
+# Build from command line
+xcodebuild -scheme MinutAlarmWidget \
+  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  build
+```
 
 ### Logging
 
-Comprehensive logging using `os.log`:
-- **Network**: Token refresh, API calls, errors
-- **Widget**: Timeline updates, state changes, grace period
-- **Auth**: Sign-in flow, token management
+Uses `os.log` with subsystem `group.se.akacian.minut-alarm`. Filter in Console.app by:
+- "Network" for API calls
+- "Widget" for timeline updates
+- "Auth" for authentication flow
 
-Filter Console.app by subsystem: `group.se.akacian.minut-alarm`
+### Adding Shared Code
 
-### Code Review
+When adding new shared files:
+1. Create the file in the `Shared/` directory
+2. In Xcode, select the file and check both targets in Target Membership
 
-See `code_review.md` for detailed analysis and recommendations.
+### Brand Colors
 
-## Security Notes
+Defined in `Shared/MinutColors.swift`:
+- `minutContrast` (#1C1A27) - Dark elements
+- `minutAction` (#F8C200) - Primary actions
+- `minutClarity` (#BACDDF) - Secondary backgrounds
+- `minutCalm` (#F8F5F1) - Light text
 
-- OAuth credentials stored in `Secrets.swift` (gitignored)
-- Tokens encrypted in Keychain with App Group access
-- All API calls use Bearer token authentication
-- Privacy-aware logging (sensitive data marked `.private`)
-- Simulator keychain workaround for development
+## Operations and Limitations
 
-## Requirements
+### Widget Refresh Behavior
 
-- iOS 17.0+ (for interactive widget buttons)
-- iOS 16.0+ (with deep link fallback for older versions)
-- Xcode 15.0+
-- Swift 5.9+
-- Minut account with API access
-- Apple Developer account (for App Groups)
+- Normal refresh: every 15 minutes (controlled by iOS)
+- During grace period: refreshes 3 seconds after expiry
+- iOS may delay updates due to background budget limits
+- Force refresh with `WidgetCenter.shared.reloadTimelines(ofKind:)`
 
-## Contributing
+### Known Limitations
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run code review: see `code_review.md` for guidelines
-5. Submit a pull request
+**Widget process constraints:**
+- Cannot present UI or alerts
+- Cannot initiate OAuth flow (user must sign in via main app)
+- Strict CPU/memory limits
+- No access to URL schemes for deep linking
+
+**Simulator limitations:**
+- Keychain access groups may not work reliably
+- Code disables access groups on simulator automatically
+- Test on physical device for production behavior
+
+### Troubleshooting
+
+**"Sign In Required" in widget:**
+- Open main app and sign in
+- Verify App Group is configured for both targets
+- Check keychain access group matches in entitlements
+
+**Widget not updating:**
+- Ensure a home is selected in main app
+- Pull down on home screen to refresh
+- Check Console.app for error logs
+
+**OAuth redirect failing:**
+- Verify redirect URI matches exactly: `minutalarm://callback`
+- Check URL scheme in `MinutAlarmWidget/Info.plist`
+- Ensure configured in Minut developer portal
+
+**Keychain error -34018:**
+- Expected on simulator; test on physical device
+- Code automatically handles simulator fallback
+
+### Security Notes
+
+- OAuth credentials gitignored in `Secrets.swift`
+- Tokens stored encrypted in Keychain with App Group access
+- Bearer token authentication for all API calls
+- Sensitive data marked `.private` in logs
 
 ## License
 
