@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		2199A2862F15491700699F37 /* MinutColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2199A2852F15491700699F37 /* MinutColors.swift */; };
 		2199A2872F15491700699F37 /* MinutColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2199A2852F15491700699F37 /* MinutColors.swift */; };
+		2199A28B2F16834400699F37 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 2199A2882F16834400699F37 /* CLAUDE.md */; };
+		2199A28C2F16834400699F37 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2199A28A2F16834400699F37 /* README.md */; };
+		2199A28D2F16834400699F37 /* code_review.md in Resources */ = {isa = PBXBuildFile; fileRef = 2199A2892F16834400699F37 /* code_review.md */; };
+		21C047712F1684E500061699 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047702F1684E500061699 /* Secrets.swift */; };
+		21C047722F1684E500061699 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C047702F1684E500061699 /* Secrets.swift */; };
 		AAA00001001 /* MinutAlarmWidgetApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00001000 /* MinutAlarmWidgetApp.swift */; };
 		AAA00002001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA00002000 /* ContentView.swift */; };
 		AAA00003001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AAA00003000 /* Assets.xcassets */; };
@@ -54,6 +59,10 @@
 
 /* Begin PBXFileReference section */
 		2199A2852F15491700699F37 /* MinutColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutColors.swift; sourceTree = "<group>"; };
+		2199A2882F16834400699F37 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		2199A2892F16834400699F37 /* code_review.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = code_review.md; sourceTree = "<group>"; };
+		2199A28A2F16834400699F37 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		21C047702F1684E500061699 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AAA00000000 /* MinutAlarmWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MinutAlarmWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAA00001000 /* MinutAlarmWidgetApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinutAlarmWidgetApp.swift; sourceTree = "<group>"; };
 		AAA00002000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -96,6 +105,9 @@
 		AAA30000000 = {
 			isa = PBXGroup;
 			children = (
+				2199A2882F16834400699F37 /* CLAUDE.md */,
+				2199A2892F16834400699F37 /* code_review.md */,
+				2199A28A2F16834400699F37 /* README.md */,
 				AAA30001000 /* MinutAlarmWidget */,
 				AAA30002000 /* MinutAlarmWidgetExtension */,
 				AAA30003000 /* Shared */,
@@ -133,6 +145,7 @@
 		AAA30003000 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				21C047702F1684E500061699 /* Secrets.swift */,
 				2199A2852F15491700699F37 /* MinutColors.swift */,
 				AAA00007000 /* SharedModels.swift */,
 				AAA00008000 /* SharedSettings.swift */,
@@ -206,7 +219,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					AAA40000000 = {
 						CreatedOnToolsVersion = 15.0;
@@ -241,6 +254,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAA00003001 /* Assets.xcassets in Resources */,
+				2199A28B2F16834400699F37 /* CLAUDE.md in Resources */,
+				2199A28C2F16834400699F37 /* README.md in Resources */,
+				2199A28D2F16834400699F37 /* code_review.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -260,6 +276,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAA00001001 /* MinutAlarmWidgetApp.swift in Sources */,
+				21C047722F1684E500061699 /* Secrets.swift in Sources */,
 				AAA00002001 /* ContentView.swift in Sources */,
 				2199A2862F15491700699F37 /* MinutColors.swift in Sources */,
 				AAA00004001 /* MinutAuthService.swift in Sources */,
@@ -276,6 +293,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BBB00001001 /* WidgetBundle.swift in Sources */,
+				21C047712F1684E500061699 /* Secrets.swift in Sources */,
 				BBB00002001 /* MinutAlarmWidget.swift in Sources */,
 				BBB00004001 /* SharedModels.swift in Sources */,
 				2199A2872F15491700699F37 /* MinutColors.swift in Sources */,
@@ -331,6 +349,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = JUDM2EC2Y5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -354,6 +373,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -394,6 +414,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = JUDM2EC2Y5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -410,6 +431,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -423,7 +445,6 @@
 				CODE_SIGN_ENTITLEMENTS = MinutAlarmWidget/MinutAlarmWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MinutAlarmWidget/Info.plist;
@@ -459,7 +480,6 @@
 				CODE_SIGN_ENTITLEMENTS = MinutAlarmWidget/MinutAlarmWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MinutAlarmWidget/Info.plist;
@@ -495,11 +515,11 @@
 				CODE_SIGN_ENTITLEMENTS = MinutAlarmWidgetExtension/MinutAlarmWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MinutAlarmWidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Minut Alarm Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -527,11 +547,11 @@
 				CODE_SIGN_ENTITLEMENTS = MinutAlarmWidgetExtension/MinutAlarmWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MinutAlarmWidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Minut Alarm Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

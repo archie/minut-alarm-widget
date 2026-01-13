@@ -10,8 +10,8 @@ struct SharedSettings {
     // 2. Main app entitlements
     // 3. Widget extension entitlements
     static let suiteName = "group.se.akacian.minut-alarm"
-    static let clientId = "43faafc9225e8365"
-    static let clientSecret = "ebf2cd91b9abf20d9cabe24a0069c0c9"
+    static let clientId = Secrets.clientId
+    static let clientSecret = Secrets.clientSecret
     static let redirectUri = "minutalarm://callback"
     
     private static var defaults: UserDefaults? {

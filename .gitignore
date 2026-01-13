@@ -90,6 +90,4 @@ Temporary Items
 *~.nib
 
 # Credentials (DO NOT COMMIT)
-# Uncomment if you store credentials in separate config files
-# Config.plist
-# Secrets.plist
+Secrets.swift

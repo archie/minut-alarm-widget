@@ -6,7 +6,7 @@ import SwiftUI
 import AppIntents
 import os.log
 
-private let logger = Logger(subsystem: "se.akacian.minut-alarm-widget", category: "Widget")
+private let logger = Logger(subsystem: SharedSettings.suiteName, category: "Widget")
 
 // MARK: - Timeline Entry
 
